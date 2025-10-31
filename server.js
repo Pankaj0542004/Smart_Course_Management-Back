@@ -13,10 +13,24 @@ const app = express();
 // Robust CORS: allow a whitelist of origins (comma/space separated) and support credentials
 // Example: CLIENT_ORIGIN="http://localhost:5173, https://your-frontend.vercel.app"
 const rawOrigins = process.env.CLIENT_ORIGIN || '';
-const allowList = rawOrigins
-    .split(/[,\s]+/)
+// Normalize allow-list: trim, drop trailing slashes, and support simple wildcards like https://*.vercel.app
+function normalizeOrigin(o) {
+    return (o || '').trim().replace(/\/$/, '');
+}
+const allowListRaw = rawOrigins
+    .split(/[\,\s]+/)
     .map((s) => s.trim())
     .filter(Boolean);
+const allowList = allowListRaw.map(normalizeOrigin);
+const wildcardPatterns = allowList
+    .filter((o) => o.includes('*'))
+    .map((pattern) => {
+        // Escape regex chars except * then replace * with [^.]+
+        const escaped = pattern
+            .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+            .replace(/\\\*/g, '[^.]+');
+        return new RegExp(`^${escaped}$`);
+    });
 
 // In development, also allow common localhost origins by default if no explicit allowList is provided
 const devDefaults = ['http://localhost:5173', 'http://127.0.0.1:5173', "https://smart-course-management-front.vercel.app",];
@@ -25,15 +39,18 @@ const corsOptions = {
     origin: (origin, callback) => {
         // Allow non-browser requests (no origin) and health checks
         if (!origin) return callback(null, true);
+        const normOrigin = normalizeOrigin(origin);
         // permissive if not configured
         if (allowList.length === 0) {
             // If dev, also allow common Vite dev origins
             if (process.env.NODE_ENV !== 'production') {
-                if (devDefaults.includes(origin)) return callback(null, true);
+                if (devDefaults.map(normalizeOrigin).includes(normOrigin)) return callback(null, true);
             }
             return callback(null, true);
         }
-        if (allowList.includes(origin)) return callback(null, true);
+        if (allowList.includes(normOrigin)) return callback(null, true);
+        // wildcard domain support
+        if (wildcardPatterns.some((re) => re.test(normOrigin))) return callback(null, true);
         return callback(new Error(`CORS: Origin ${origin} not allowed`));
     },
     credentials: true,
