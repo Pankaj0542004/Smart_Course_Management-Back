@@ -19,7 +19,7 @@ const allowList = rawOrigins
     .filter(Boolean);
 
 // In development, also allow common localhost origins by default if no explicit allowList is provided
-const devDefaults = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+const devDefaults = ['http://localhost:5173', 'http://127.0.0.1:5173', "https://smart-course-management-front.vercel.app",];
 
 const corsOptions = {
     origin: (origin, callback) => {
