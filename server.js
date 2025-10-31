@@ -18,18 +18,33 @@ const allowList = rawOrigins
     .map((s) => s.trim())
     .filter(Boolean);
 
-app.use(
-    cors({
-        origin: (origin, callback) => {
-            // Allow non-browser requests (no origin) and health checks
-            if (!origin) return callback(null, true);
-            if (allowList.length === 0) return callback(null, true); // permissive if not configured
-            if (allowList.includes(origin)) return callback(null, true);
-            return callback(new Error(`CORS: Origin ${origin} not allowed`));
-        },
-        credentials: true,
-    })
-);
+// In development, also allow common localhost origins by default if no explicit allowList is provided
+const devDefaults = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Allow non-browser requests (no origin) and health checks
+        if (!origin) return callback(null, true);
+        // permissive if not configured
+        if (allowList.length === 0) {
+            // If dev, also allow common Vite dev origins
+            if (process.env.NODE_ENV !== 'production') {
+                if (devDefaults.includes(origin)) return callback(null, true);
+            }
+            return callback(null, true);
+        }
+        if (allowList.includes(origin)) return callback(null, true);
+        return callback(new Error(`CORS: Origin ${origin} not allowed`));
+    },
+    credentials: true,
+    // Be explicit to avoid proxy/load balancer quirks
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
+// Ensure preflight requests are handled for all routes
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(morgan('dev'));
 
