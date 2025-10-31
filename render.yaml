@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: smart-course-backend
+    env: node
+    plan: starter
+    region: oregon
+    branch: main
+    autoDeploy: true
+    buildCommand: "cd Backend && npm install"
+    startCommand: "cd Backend && npm start"
+    healthCheckPath: "/health"
+    envVars:
+      - key: MONGODB_URI
+        value: ""
+      - key: JWT_SECRET
+        value: ""
+      - key: JWT_REFRESH_SECRET
+        value: ""
+      - key: CLIENT_ORIGIN
+        value: ""
+      - key: NODE_ENV
+        value: "production"
+      - key: ACCESS_TOKEN_EXPIRES_IN
+        value: "1h"
+      - key: REFRESH_TOKEN_EXPIRES_IN
+        value: "7d"

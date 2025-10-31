@@ -1,0 +1,14 @@
+# Ignore backend dependencies and environment
+Backend/node_modules/
+Backend/.env
+
+# Ignore Vercel build output (optional)
+Smart_Course_Management/dist/
+
+# Node / OS / Editor
+node_modules/
+.env
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
