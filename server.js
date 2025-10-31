@@ -10,8 +10,26 @@ dotenv.config();
 const app = express();
 
 // Middlewares
-const corsOrigin = process.env.CLIENT_ORIGIN || '*';
-app.use(cors({ origin: corsOrigin, credentials: true }));
+// Robust CORS: allow a whitelist of origins (comma/space separated) and support credentials
+// Example: CLIENT_ORIGIN="http://localhost:5173, https://your-frontend.vercel.app"
+const rawOrigins = process.env.CLIENT_ORIGIN || '';
+const allowList = rawOrigins
+    .split(/[,\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            // Allow non-browser requests (no origin) and health checks
+            if (!origin) return callback(null, true);
+            if (allowList.length === 0) return callback(null, true); // permissive if not configured
+            if (allowList.includes(origin)) return callback(null, true);
+            return callback(new Error(`CORS: Origin ${origin} not allowed`));
+        },
+        credentials: true,
+    })
+);
 app.use(express.json());
 app.use(morgan('dev'));
 

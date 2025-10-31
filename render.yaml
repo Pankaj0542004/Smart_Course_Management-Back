@@ -17,7 +17,7 @@ services:
       - key: JWT_REFRESH_SECRET
         value: ""
       - key: CLIENT_ORIGIN
-        value: ""
+        value: "http://localhost:5173, https://smart-course-management-front.vercel.app"
       - key: NODE_ENV
         value: "production"
       - key: ACCESS_TOKEN_EXPIRES_IN
